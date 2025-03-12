@@ -23,6 +23,8 @@ app_name = "tool01"
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    path('', views.home, name='home'),  # 根路径显示首页
+
     # 日语汉字转假名小工具
     path('jap_kanji/', views.japan_kanji, name='jap_kanji_hira'),
 ]

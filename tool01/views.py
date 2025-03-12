@@ -14,6 +14,11 @@ tagger = GenericTagger()
 pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Windows
 
 
+def home(request):
+    """显示门户页面"""
+    return render(request, "home.html")
+
+
 def add_furigana(text):
     """
     为日文文章中的汉字加上平假名，并对动词的假名注释加红色。
