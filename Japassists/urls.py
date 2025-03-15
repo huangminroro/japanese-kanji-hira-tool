@@ -27,4 +27,7 @@ urlpatterns = [
 
     # 日语汉字转假名小工具
     path('jap_kanji/', views.japan_kanji, name='jap_kanji_hira'),
+
+    # 日语语音识别小工具
+    path('jap_audio_rec/', views.jap_audio_rec, name='jap_audio_rec'),
 ]

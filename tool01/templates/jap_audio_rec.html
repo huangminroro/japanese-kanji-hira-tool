@@ -1,0 +1,201 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>日文文章加注假名</title>
+    <!-- Bootstrap 5.0 CSS -->
+    <link rel="stylesheet" href="{% static 'plug-in/bootstrap.min.css' %}">
+    <!-- Bootstrap Icons (用于返回首页的图标) -->
+<!--    <link href="{% static 'plug-in/bootstrap-icons.css' %}" rel="stylesheet">-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<div class="container">
+    <div class="panel panel-default">
+        <span class="badge bg-info text-dark">日语语音音声识别</span>
+        <style>
+            .title {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .output {
+                border: 1px solid #ddd;
+                padding: 10px;
+                height: 150px;
+                overflow-y: auto;
+                background: #f9f9f9;
+                margin-bottom: 20px;
+                border-radius: 4px;
+                white-space: pre-wrap;
+            }
+
+            .start-btn {
+                width: 100%;
+                padding: 10px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .start-btn:hover {
+                background-color: #0056b3;
+            }
+
+            .stop-btn {
+                background-color: #dc3545; /* 红色 */
+            }
+
+            .stop-btn:hover {
+                background-color: #a71d2a;
+            }
+
+            .save-btn {
+                width: 100%;
+                padding: 10px;
+                background-color: #28a745; /* 绿色 */
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                display: none; /* 初始隐藏 */
+            }
+
+            .save-btn:hover {
+                background-color: #218838;
+            }
+
+
+
+
+        </style>
+
+        <div class="panel-body">
+            <div class="title">日语音声输入</div>
+            <div class="output" id="speech-output">请点击下方按钮开始语音输入...</div>
+            <button class="start-btn" id="speech-btn" onclick="toggleSpeechRecognition()">开始语音识别</button>
+            <button class="save-btn" id="save-btn" onclick="saveRecording()">保存录音</button>
+        </div>
+    </div>
+</div>
+
+    <!-- Bootstrap 5.0 JS -->
+<script src="{% static 'plug-in/bootstrap.bundle.min.js' %}"></script>
+
+<script>
+    let recognition;
+    let isRecording = false;
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob;
+    let recognizedText = '';
+
+    async function toggleSpeechRecognition() {
+        const button = document.getElementById('speech-btn');
+        const saveButton = document.getElementById('save-btn');
+        const outputDiv = document.getElementById('speech-output');
+
+        if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+            alert('您的浏览器不支持语音识别功能，请使用最新版本的 Chrome 浏览器。');
+            return;
+        }
+
+        if (!isRecording) {
+            // 初始化语音识别
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'ja-JP'; // 设置语言为日语
+            recognition.interimResults = true; // 启用实时结果
+            recognition.continuous = true; // 连续模式
+
+            // 获取用户麦克风权限并开始录音
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = function (event) {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = function () {
+                audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                saveButton.style.display = 'block'; // 显示保存按钮
+            };
+
+            mediaRecorder.start();
+
+            recognition.onstart = function () {
+                isRecording = true;
+                recognizedText = ''; // 清空上次识别的文本
+                button.textContent = '结束语音识别';
+                button.classList.add('stop-btn'); // 添加红色样式
+                outputDiv.textContent = '正在识别，请开始说话...';
+            };
+
+            recognition.onresult = function (event) {
+                recognizedText = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join('\n');
+                outputDiv.textContent = recognizedText; // 实时更新识别内容
+            };
+
+            recognition.onerror = function (event) {
+                alert('语音识别出错：' + event.error);
+            };
+
+            recognition.onend = function () {
+                isRecording = false;
+                button.textContent = '开始语音识别';
+                button.classList.remove('stop-btn'); // 恢复蓝色样式
+                if (!recognizedText) {
+                    outputDiv.textContent = '未识别到任何内容，请重试！';
+                }
+                mediaRecorder.stop(); // 停止录音
+            };
+
+            recognition.start();
+        } else {
+            recognition.stop();
+        }
+    }
+
+    function saveRecording() {
+        if (!audioBlob || !recognizedText) {
+            alert('没有可保存的录音或识别文本！');
+            return;
+        }
+
+        // 保存录音
+        const audioURL = URL.createObjectURL(audioBlob);
+        const downloadAudioLink = document.createElement('a');
+        downloadAudioLink.href = audioURL;
+        downloadAudioLink.download = 'recording.mp3';
+        downloadAudioLink.click();
+
+        // 保存文本
+        const textBlob = new Blob([recognizedText], { type: 'text/plain' });
+        const textURL = URL.createObjectURL(textBlob);
+        const downloadTextLink = document.createElement('a');
+        downloadTextLink.href = textURL;
+        downloadTextLink.download = 'recognized_text.txt';
+        downloadTextLink.click();
+
+        // 隐藏保存按钮
+        const saveButton = document.getElementById('save-btn');
+        saveButton.style.display = 'none';
+        alert('录音和文本已保存并下载！');
+    }
+
+
+</script>
+    </body>
+</html>

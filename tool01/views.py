@@ -115,3 +115,7 @@ def japan_kanji(request):
                 verbs_output = ""
 
     return render(request, "jap_kanji.html", {"processed_text": processed_text, "verbs_output": verbs_output})
+
+
+def jap_audio_rec(request):
+    return render(request, 'jap_audio_rec.html')
