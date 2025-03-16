@@ -30,4 +30,7 @@ urlpatterns = [
 
     # 日语语音识别小工具
     path('jap_audio_rec/', views.jap_audio_rec, name='jap_audio_rec'),
+
+    # 日语音读训读
+    path('jap_yomikata/', views.jap_yomikata, name='jap_yomikata'),
 ]

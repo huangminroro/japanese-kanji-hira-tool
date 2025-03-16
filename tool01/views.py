@@ -3,6 +3,8 @@ from fugashi import Tagger, GenericTagger
 import jaconv
 from PIL import Image
 import pytesseract
+from jamdict import Jamdict
+import requests
 
 # Create your views here.
 
@@ -119,3 +121,61 @@ def japan_kanji(request):
 
 def jap_audio_rec(request):
     return render(request, 'jap_audio_rec.html')
+
+
+def jap_yomikata(request):
+    result = None
+    if request.method == "POST":
+        kanji = request.POST.get("kanji", "").strip()
+        if kanji:
+            try:
+                # 在视图函数内初始化 Jamdict，确保线程安全
+                jam = Jamdict(
+                    db_file="C:/Users/xuans/PycharmProjects/my projects/Japassists/jamdict.db",
+                    kd2_file="C:/Users/xuans/PycharmProjects/my projects/Japassists/kanjidic2.xml"
+                )
+
+                # 获取汉字的音读和训读
+                lookup_result = jam.lookup(kanji)
+                if lookup_result.chars:
+                    char = lookup_result.chars[0]
+                    on_readings = ["无音读"]
+                    kun_readings = ["无训读"]
+                    if char.rm_groups:
+                        for rm_group in char.rm_groups:
+                            for reading in rm_group.readings:
+                                if reading.r_type == "ja_on":
+                                    on_readings = [r.value for r in rm_group.readings if r.r_type == "ja_on"]
+                                elif reading.r_type == "ja_kun":
+                                    kun_readings = [r.value for r in rm_group.readings if r.r_type == "ja_kun"]
+
+                    # 从 JMdict entries 获取例词
+                    on_examples = {r: [] for r in on_readings}
+                    kun_examples = {r.split('.')[0]: [] for r in kun_readings}
+                    for entry in lookup_result.entries:
+                        word = entry.text()
+                        if kanji in word:
+                            reading = entry.kana_forms[0].text if entry.kana_forms else ""
+                            if reading in on_readings and len(on_examples[reading]) < 3:
+                                on_examples[reading].append(word)
+                            reading_base = reading.split('.')[0]
+                            if reading_base in kun_examples and len(kun_examples[reading_base]) < 3:
+                                kun_examples[reading_base].append(word)
+
+                    result = {
+                        "kanji": kanji,
+                        "on_readings": [
+                            {"reading": r, "examples": on_examples.get(r, ["暂无例词"])}
+                            for r in on_readings
+                        ],
+                        "kun_readings": [
+                            {"reading": r, "examples": kun_examples.get(r.split('.')[0], ["暂无例词"])}
+                            for r in kun_readings
+                        ]
+                    }
+                else:
+                    result = {"error": "未找到该汉字的信息"}
+            except Exception as e:
+                result = {"error": f"查询失败: {str(e)}"}
+
+    return render(request, "jap_yomikata.html", {"result": result})

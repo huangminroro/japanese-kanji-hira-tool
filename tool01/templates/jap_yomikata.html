@@ -1,0 +1,139 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+    <title>汉字读音查询</title>
+    <!-- Bootstrap 5.0 CSS -->
+    <link rel="stylesheet" href="{% static 'plug-in/bootstrap.min.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* 自定义样式 */
+        .container {
+            max-width: 800px; /* 限制内容宽度，保持简洁 */
+        }
+        .card-header {
+            background-color: #007bff; /* 蓝色主题 */
+        }
+        .reading-section {
+            background-color: #f8f9fa; /* 浅灰背景 */
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .reading strong {
+            color: #007bff; /* 读音高亮 */
+        }
+        .example-list {
+            list-style-type: none; /* 移除默认列表样式 */
+            padding-left: 0;
+        }
+        .example-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef; /* 添加分隔线 */
+        }
+        .example-list li:last-child {
+            border-bottom: none; /* 最后一个无分隔线 */
+        }
+        .btn-primary {
+            transition: background-color 0.2s; /* 按钮过渡效果 */
+        }
+        .btn-primary:hover {
+            background-color: #0056b3; /* 鼠标悬停时颜色变深 */
+        }
+         /* 自定义返回图标样式 */
+        .home-icon {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 2rem;
+            color: #007bff; /* 蓝色，与页面风格一致 */
+            transition: color 0.2s;
+            z-index: 1000; /* 确保图标在最上层 */
+        }
+        .home-icon:hover {
+            color: #0056b3; /* 鼠标悬停时颜色变深 */
+        }
+    </style>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-search"></i> 汉字读音查询
+            </div>
+            <div class="card-body">
+                <h1 class="text-center text-dark mb-4">汉字读音查询</h1>
+                <form method="POST" class="mb-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="kanji" class="form-label fw-bold text-secondary">请输入一个汉字：</label>
+                        <input type="text" id="kanji" name="kanji" class="form-control" maxlength="1" required placeholder="例如：高">
+                    </div>
+                    <button type="submit" class="btn btn-primary fw-bold w-100">查询读音</button>
+                </form>
+
+                {% if result %}
+                    <div class="result">
+                        {% if result.error %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ result.error }}
+                            </div>
+                        {% else %}
+                            <h2 class="text-center text-dark mb-3">汉字：{{ result.kanji }}</h2>
+
+                            <div class="reading-section">
+                                <h3 class="text-dark">音读 (おんよみ)</h3>
+                                {% for item in result.on_readings %}
+                                    <div class="reading mb-3">
+                                        <strong>{{ item.reading }}</strong>
+                                        <ul class="example-list">
+                                            {% for example in item.examples %}
+                                                <li>{{ example }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="reading-section">
+                                <h3 class="text-dark">训读 (くんよみ)</h3>
+                                {% for item in result.kun_readings %}
+                                    <div class="reading mb-3">
+                                        <strong>{{ item.reading }}</strong>
+                                        <ul class="example-list">
+                                            {% for example in item.examples %}
+                                                <li>{{ example }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- 字体大小调整按钮 -->
+                            <div class="mt-3 text-center">
+                                <button id="increase-font" class="btn btn-sm btn-secondary me-2">增大字体</button>
+                                <button id="decrease-font" class="btn btn-sm btn-secondary">减小字体</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.0 JS -->
+    <script src="{% static 'plug-in/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        // 字体大小调整功能
+        document.getElementById('increase-font').addEventListener('click', function() {
+            let resultDiv = document.querySelector('.result');
+            let currentSize = parseFloat(window.getComputedStyle(resultDiv).fontSize);
+            if (currentSize < 30) resultDiv.style.fontSize = (currentSize * 1.1) + 'px';
+        });
+
+        document.getElementById('decrease-font').addEventListener('click', function() {
+            let resultDiv = document.querySelector('.result');
+            let currentSize = parseFloat(window.getComputedStyle(resultDiv).fontSize);
+            if (currentSize > 10) resultDiv.style.fontSize = (currentSize / 1.1) + 'px';
+        });
+    </script>
+{% endblock %}

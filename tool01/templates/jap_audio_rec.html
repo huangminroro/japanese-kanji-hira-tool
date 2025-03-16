@@ -1,10 +1,7 @@
+{% extends 'layout.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+{% block content %}
     <title>日文文章加注假名</title>
     <!-- Bootstrap 5.0 CSS -->
     <link rel="stylesheet" href="{% static 'plug-in/bootstrap.min.css' %}">
@@ -73,10 +70,23 @@
                 background-color: #218838;
             }
 
-
+                        /* 自定义返回图标样式 */
+            .home-icon {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                font-size: 2rem;
+                color: #007bff; /* 蓝色，与页面风格一致 */
+                transition: color 0.2s;
+                z-index: 1000; /* 确保图标在最上层 */
+            }
+            .home-icon:hover {
+                color: #0056b3; /* 鼠标悬停时颜色变深 */
+            }
 
 
         </style>
+
 
         <div class="panel-body">
             <div class="title">日语音声输入</div>
@@ -197,5 +207,5 @@
 
 
 </script>
-    </body>
-</html>
+
+{% endblock %}
