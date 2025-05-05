@@ -5,6 +5,7 @@ from PIL import Image
 import pytesseract
 from jamdict import Jamdict
 import requests
+import re
 
 # Create your views here.
 
@@ -23,12 +24,16 @@ def home(request):
 
 def add_furigana(text):
     """
-    为日文文章中的汉字加上平假名，并对动词的假名注释加红色。
+    为日文文章中的汉字加上平假名注释，并对动词的假名注释加红色。
     同时提取动词的原形到一个单独的列表。
     保留原文中的回车换行位置。
+    只为包含汉字的词添加假名注释。
     """
     result = []
     verbs = []  # 用于存储动词的原形
+
+    # 正则表达式：匹配包含至少一个汉字的词
+    kanji_pattern = re.compile(r'[\u4e00-\u9fff]')
 
     # 按行拆分文本，逐行处理
     for line in text.splitlines(keepends=True):  # 保留换行符
@@ -39,8 +44,10 @@ def add_furigana(text):
             kana = features[7] if len(features) > 7 else None  # 获取假名
             pos = features[0] if len(features) > 0 else None  # 获取词性
             base_form = features[6] if len(features) > 6 else None  # 获取原形
+            surface = word.surface  # 获取表层形式（原文）
 
-            if kana and kana != word.surface:
+            # 检查词中是否包含汉字，且读音与表层形式不同
+            if kana and kana != surface and kanji_pattern.search(surface):
                 # 将片假名转为平假名
                 hiragana = jaconv.kata2hira(kana)
                 # 如果是动词，使用红色标记，并将原形添加到列表
@@ -48,11 +55,11 @@ def add_furigana(text):
                     if base_form and base_form not in verbs:
                         verbs.append(base_form)
                     line_result.append(
-                        f"<ruby>{word.surface}<rt><span style='color:red'>{hiragana}</span></rt></ruby>")
+                        f"<ruby>{surface}<rt><span style='color:red'>{hiragana}</span></rt></ruby>")
                 else:
-                    line_result.append(f"<ruby>{word.surface}<rt>{hiragana}</rt></ruby>")
+                    line_result.append(f"<ruby>{surface}<rt>{hiragana}</rt></ruby>")
             else:
-                line_result.append(word.surface)
+                line_result.append(surface)
 
         # 将处理后的行内容加到结果中，包括行末换行符
         result.append(''.join(line_result))

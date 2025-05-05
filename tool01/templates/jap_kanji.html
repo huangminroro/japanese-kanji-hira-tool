@@ -7,21 +7,7 @@
     <link rel="stylesheet" href="{% static 'plug-in/bootstrap.min.css' %}">
 <!--    <link href="{% static 'plug-in/bootstrap-icons.css' %}" rel="stylesheet">-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        /* 自定义返回图标样式 */
-        .home-icon {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            font-size: 2rem;
-            color: #007bff; /* 蓝色，与页面风格一致 */
-            transition: color 0.2s;
-            z-index: 1000; /* 确保图标在最上层 */
-        }
-        .home-icon:hover {
-            color: #0056b3; /* 鼠标悬停时颜色变深 */
-        }
-    </style>
+
 
 <div class="container mt-4">
     <div class="card">
@@ -65,6 +51,25 @@
                 </div>
             </div>
         </div>
+
+        <div id="verb-collector" class="position-fixed top-1 end-0 p-3 bg-white shadow rounded" style="width: 250px; height: 90vh; overflow-y: auto; z-index: 1050;">
+            <h5 class="text-primary fw-bold">收藏动词</h5>
+
+            <div id="verb-dropzone" class="border p-2 rounded bg-light mb-2" style="min-height: 100px;">
+                <p class="text-muted">将动词拖到这里</p>
+            </div>
+
+            <!-- 垃圾筐图标 -->
+            <div id="trash-can" class="text-center p-2 border rounded bg-danger text-white"
+                 style="cursor: pointer; transition: background 0.3s;">
+                🗑 拖到此处删除
+            </div>
+
+            <hr>
+            <div id="collected-verbs" class="small mt-2">
+                <!-- 已收集动词列表 -->
+            </div>
+        </div>
     </div>
 </div>
 
@@ -85,5 +90,58 @@
         if (currentSize > 10) outputText.style.fontSize = (currentSize / 1.1) + 'px';
     });
 </script>
+
+<script>
+    const dropzone = document.getElementById('verb-dropzone');
+    const collected = document.getElementById('collected-verbs');
+    const trashCan = document.getElementById('trash-can');
+
+    let savedVerbs = JSON.parse(localStorage.getItem('collectedVerbs') || '[]');
+    updateCollected(savedVerbs);
+
+    // 初始化拖拽区域
+    dropzone.addEventListener('dragover', e => e.preventDefault());
+    dropzone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        const text = e.dataTransfer.getData('text/plain');
+        if (text && !savedVerbs.includes(text)) {
+            savedVerbs.push(text);
+            localStorage.setItem('collectedVerbs', JSON.stringify(savedVerbs));
+            updateCollected(savedVerbs);
+        }
+    });
+
+    // 渲染已收集动词
+    function updateCollected(verbs) {
+        collected.innerHTML = verbs.map(v => `
+            <span class="badge bg-success m-1" draggable="true"
+                  ondragstart="event.dataTransfer.setData('text/plain', '${v}')">
+                ${v}
+            </span>
+        `).join('');
+    }
+
+    // 垃圾筐逻辑
+    trashCan.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        this.classList.add('bg-dark');
+    });
+
+    trashCan.addEventListener('dragleave', function () {
+        this.classList.remove('bg-dark');
+    });
+
+    trashCan.addEventListener('drop', function (e) {
+        e.preventDefault();
+        this.classList.remove('bg-dark');
+        const text = e.dataTransfer.getData('text/plain');
+        if (text && savedVerbs.includes(text)) {
+            savedVerbs = savedVerbs.filter(v => v !== text);
+            localStorage.setItem('collectedVerbs', JSON.stringify(savedVerbs));
+            updateCollected(savedVerbs);
+        }
+    });
+</script>
+
 
 {% endblock %}
